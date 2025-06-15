@@ -12,7 +12,7 @@ env:
 
 jobs:
   terraform-plan:
-    name: Terraform Plan (${{ env.ENVIRONMENT }})
+    name: Terraform Plan (prod)
     runs-on: ubuntu-latest
 
     steps:
@@ -32,23 +32,25 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Terraform Init
+        working-directory: terraform-infrastructure
         run: terraform init -backend-config="environments/${{ env.ENVIRONMENT }}/backend.hcl"
 
       - name: Terraform Plan
+        working-directory: terraform-infrastructure
         run: terraform plan -var-file="environments/${{ env.ENVIRONMENT }}/infra.tfvars" -out=tfplan
 
       - name: Upload Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-${{ env.ENVIRONMENT }}
-          path: tfplan
+          path: terraform-infrastructure/tfplan
 
   terraform-apply:
-    name: Terraform Apply (${{ env.ENVIRONMENT }} - Manual Approval Required)
+    name: Terraform Apply (prod - Manual Approval Required)
     needs: terraform-plan
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: ${{ env.GITHUB_ENVIRONMENT }}
+    environment: prod-approval
 
     steps:
       - name: Checkout
@@ -67,13 +69,15 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Terraform Init
-        run: terraform init
+        working-directory: terraform-infrastructure
+        run: terraform init -backend-config="environments/${{ env.ENVIRONMENT }}/backend.hcl"
 
       - name: Download Plan
         uses: actions/download-artifact@v4
         with:
           name: tfplan-${{ env.ENVIRONMENT }}
+          path: terraform-infrastructure
 
       - name: Terraform Apply
+        working-directory: terraform-infrastructure
         run: terraform apply tfplan
-#
