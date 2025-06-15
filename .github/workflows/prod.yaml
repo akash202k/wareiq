@@ -12,7 +12,7 @@ env:
 
 jobs:
   terraform-plan:
-    name: Terraform Plan (${{ env.ENVIRONMENT }})
+    name: Terraform Plan (prod)
     runs-on: ubuntu-latest
 
     steps:
@@ -44,11 +44,11 @@ jobs:
           path: tfplan
 
   terraform-apply:
-    name: Terraform Apply (${{ env.ENVIRONMENT }} - Manual Approval Required)
+    name: Terraform Apply (prod - Manual Approval Required)
     needs: terraform-plan
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/prod' && github.event_name == 'push'
-    environment: ${{ env.GITHUB_ENVIRONMENT }}
+    environment: prod-approval
 
     steps:
       - name: Checkout

@@ -12,7 +12,7 @@ env:
 
 jobs:
   terraform-plan:
-    name: Terraform Plan (${{ env.ENVIRONMENT }})
+    name: Terraform Plan (dev)
     runs-on: ubuntu-latest
 
     steps:
@@ -44,11 +44,11 @@ jobs:
           path: tfplan
 
   terraform-apply:
-    name: Terraform Apply (${{ env.ENVIRONMENT }})
+    name: Terraform Apply (dev)
     needs: terraform-plan
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/dev' && github.event_name == 'push'
-    environment: ${{ env.GITHUB_ENVIRONMENT }}
+    environment: dev-approval
 
     steps:
       - name: Checkout
