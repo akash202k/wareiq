@@ -32,16 +32,18 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Terraform Init
-        run: terraform init -backend-config="terraform-infrastructure/environments/${{ env.ENVIRONMENT }}/backend.hcl"
+        working-directory: terraform-infrastructure
+        run: terraform init -backend-config="environments/${{ env.ENVIRONMENT }}/backend.hcl"
 
       - name: Terraform Plan
-        run: terraform plan -var-file="terraform-infrastructure/environments/${{ env.ENVIRONMENT }}/infra.tfvars" -out=tfplan
+        working-directory: terraform-infrastructure
+        run: terraform plan -var-file="environments/${{ env.ENVIRONMENT }}/infra.tfvars" -out=tfplan
 
       - name: Upload Plan
         uses: actions/upload-artifact@v4
         with:
           name: tfplan-${{ env.ENVIRONMENT }}
-          path: tfplan
+          path: terraform-infrastructure/tfplan
 
   terraform-apply:
     name: Terraform Apply (dev)
@@ -67,12 +69,15 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Terraform Init
-        run: terraform init
+        working-directory: terraform-infrastructure
+        run: terraform init -backend-config="environments/${{ env.ENVIRONMENT }}/backend.hcl"
 
       - name: Download Plan
         uses: actions/download-artifact@v4
         with:
           name: tfplan-${{ env.ENVIRONMENT }}
+          path: terraform-infrastructure
 
       - name: Terraform Apply
+        working-directory: terraform-infrastructure
         run: terraform apply tfplan
