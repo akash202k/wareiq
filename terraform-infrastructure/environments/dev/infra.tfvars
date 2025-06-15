@@ -1,0 +1,5 @@
+environment   = "dev"
+aws_region    = "ap-south-1"
+vpc_cidr      = "10.1.0.0/16"
+instance_type = "t3.micro"
+bucket_prefix = "wareIQ-dev"
