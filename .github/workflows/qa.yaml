@@ -1,0 +1,78 @@
+name: Terraform QA Deployment
+on:
+  push:
+    branches: [qa]
+  pull_request:
+    branches: [qa]
+
+env:
+  ENVIRONMENT: qa
+  APPROVAL_REQUIRED: true
+  GITHUB_ENVIRONMENT: qa-approval
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan (${{ env.ENVIRONMENT }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.1
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        run: terraform init -backend-config="environments/${{ env.ENVIRONMENT }}/backend.hcl"
+
+      - name: Terraform Plan
+        run: terraform plan -var-file="environments/${{ env.ENVIRONMENT }}/infra.tfvars" -out=tfplan
+
+      - name: Upload Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ env.ENVIRONMENT }}
+          path: tfplan
+
+  terraform-apply:
+    name: Terraform Apply (${{ env.ENVIRONMENT }} - Manual Approval)
+    needs: terraform-plan
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/qa' && github.event_name == 'push'
+    environment: ${{ env.GITHUB_ENVIRONMENT }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.1
+
+      - name: Configure AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Download Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-${{ env.ENVIRONMENT }}
+
+      - name: Terraform Apply
+        run: terraform apply tfplan
