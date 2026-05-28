@@ -22,3 +22,9 @@ variable "bucket_prefix" {
   description = "S3 bucket prefix"
   type        = string
 }
+
+variable "tenant_ids" {
+  description = "Tenant identifiers for per-tenant S3 buckets"
+  type        = set(string)
+  default     = []
+}

@@ -15,7 +15,7 @@ Multi-environment AWS infrastructure management using Terraform and GitHub Actio
 |-------------|--------|--------|----------|
 | Dev | `dev` | us-west-2 | Manual |
 | QA | `qa` | us-west-2 | Manual |
-| Prod | `prod` | us-west-2 | Manual |
+| Prod (batched) | `main` | us-west-2 | Manual |
 
 ## Quick Start
 
@@ -33,16 +33,22 @@ Multi-environment AWS infrastructure management using Terraform and GitHub Actio
 3. **Deploy to environment:**
    - Push to `dev` branch → triggers dev deployment
    - Push to `qa` branch → triggers qa deployment  
-   - Push to `prod` branch → triggers prod deployment
+   - Push to `main` branch → triggers batched prod deployment (`batch-1`, `batch-2`)
 
 ## Local Development
 
 ```bash
-# Initialize
+# Initialize (dev/qa)
 terraform init -backend-config="environments/dev/backend.hcl"
+
+# Initialize (prod batch)
+terraform init -backend-config="environments/prod/batch-1/backend.hcl"
 
 # Plan
 terraform plan -var-file="environments/dev/infra.tfvars"
+
+# Plan for a prod batch with API-throttle friendly refresh skip
+terraform plan -refresh=false -var-file="environments/prod/batch-1/infra.tfvars"
 
 # Apply
 terraform apply -var-file="environments/dev/infra.tfvars"
@@ -59,6 +65,8 @@ terraform-infrastructure/
 │   ├── dev/
 │   ├── qa/
 │   └── prod/
+│       ├── batch-1/
+│       └── batch-2/
 ├── modules/               # Reusable Terraform modules
 │   ├── compute/
 │   ├── network/
@@ -69,7 +77,9 @@ terraform-infrastructure/
 ## Features
 
 - ✅ Multi-environment support
+- ✅ Batched prod state sharding (`prod/batch-*`)
 - ✅ Remote state with S3 locking
+- ✅ Optional `-refresh=false` for high-load prod runs
 - ✅ Automated CI/CD with GitHub Actions
 - ✅ Manual approval for deployments
-- ✅ Modular Terraform architecture
+- ✅ Tenant-level S3 fanout (`tenant_ids`)

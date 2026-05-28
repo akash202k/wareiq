@@ -9,3 +9,7 @@ output "instance_id" {
 output "s3_bucket_name" {
   value = module.s3.bucket_name
 }
+
+output "tenant_s3_bucket_names" {
+  value = { for tenant_id, mod in module.tenant_s3 : tenant_id => mod.bucket_name }
+}
